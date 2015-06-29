@@ -14,13 +14,13 @@ doxy2swig.py [options] input.xml output.i
 input.xml is your doxygen generated XML file and output.i is where the
 output will be written (the file will be clobbered).
 
+
 Options:
   -h, --help            show this help message and exit
   -f, --function-signature
                         include function signature in the documentation. This
-                        is handy since this allows you to use the swig
-                        generated function definition using
-                        %feature("autodoc", [0,1])
+                        is handy when not using swig auto-generated function
+                        definitions %feature("autodoc", [0,1])
   -c, --constructor-list
                         generate a constructor list for class documentation.
                         Useful for target languages where the object
@@ -36,7 +36,7 @@ Options:
                         attach the correct docstring to each function overload
                         manually
   -w W, --width=W       textwidth for wrapping (default: 80). Note that the
-                        generated lines may include 2 additional spaced (for
+                        generated lines may include 2 additional spaces (for
                         markdown).
   -q, --quiet           be quiet and minimize output
 ```

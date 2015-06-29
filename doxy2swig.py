@@ -27,7 +27,7 @@ output will be written (the file will be clobbered).
 # Changes:
 # June 2015 (Michael Thon):
 #   - class documentation:
-#     -c: add constructor call signatures and a "Constructors" sections
+#     -c: add constructor call signatures and a "Constructors" section
 #         collecting the respective docs (e.g. for python)
 #     -a: add "Attributes" section collecting the documentation for member
 #         variables (e.g. for python)
@@ -760,7 +760,7 @@ def main():
                       action='store_true',
                       default=False,
                       dest='f',
-                      help='include function signature in the documentation. This is handy since this allows you to use the swig generated function definition using %feature("autodoc", [0,1])')
+                      help='include function signature in the documentation. This is handy when not using swig auto-generated function definitions %feature("autodoc", [0,1])')
     parser.add_option("-c", '--constructor-list',
                       action='store_true',
                       default=False,
@@ -780,7 +780,7 @@ def main():
                       action='store',
                       dest='w',
                       default=80,
-                      help='textwidth for wrapping (default: 80). Note that the generated lines may include 2 additional spaced (for markdown).')
+                      help='textwidth for wrapping (default: 80). Note that the generated lines may include 2 additional spaces (for markdown).')
     parser.add_option("-q", '--quiet',
                       action='store_true',
                       default=False,
