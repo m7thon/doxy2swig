@@ -97,6 +97,7 @@ class Doxy2SWIG:
 
     def __init__(self, src,
                  with_function_signature = False,
+                 with_type_info = False,
                  with_constructor_list = False,
                  with_attribute_list = False,
                  with_overloaded_functions = False,
@@ -112,6 +113,7 @@ class Doxy2SWIG:
         """
         # options:
         self.with_function_signature = with_function_signature
+        self.with_type_info = with_type_info
         self.with_constructor_list = with_constructor_list
         self.with_attribute_list = with_attribute_list
         self.with_overloaded_functions = with_overloaded_functions
@@ -224,9 +226,9 @@ class Doxy2SWIG:
         self.indent += indent
         for n in node.childNodes:
             if restrict is not None:
-                if n.nodeType != n.ELEMENT_NODE or n.tagName not in restrict:
-                    continue
-            if n.nodeType != n.ELEMENT_NODE or n.tagName not in ignore:
+                if n.nodeType == n.ELEMENT_NODE and n.tagName in restrict:
+                    self.parse(n)
+            elif n.nodeType != n.ELEMENT_NODE or n.tagName not in ignore:
                 self.parse(n)
         if indent > 0:
             self.pieces = shift(self.pieces, indent, i_piece)
@@ -273,20 +275,6 @@ class Doxy2SWIG:
         else:
             self.pieces.append(value)
 
-    def get_Text(self, node):
-        """Return the text stored in the firstChild.data of the `node`."""
-        try:
-            txt = node.firstChild.data
-            txt = txt.replace('\\', r'\\')
-            txt = txt.replace('"', r'\"')
-            m = self.space_re.match(txt)
-            if m and len(m.group()) == len(txt):
-                return ''
-            else:
-                return txt
-        except:
-            return ''
-
     def start_new_paragraph(self):
         """Make sure to create an empty line. This is overridden, if the previous
         text ends with the special marker ''. In that case, nothing is done.
@@ -316,25 +304,40 @@ class Doxy2SWIG:
                 wrapped_lines[i] = indent * ' ' + wrapped_lines[i]
         self.pieces.append(line[:indent] + '\n'.join(wrapped_lines)[indent:] + '  \n')
 
-    def get_type(self, node):
-        """Return the text represented by the child node with tag `type`."""
-        pieces, self.pieces = self.pieces, []
-        type = self.get_specific_subnodes(node, 'type')
-        if type:
-            self.subnode_parse(type[0])
-        type_str = ''.join(self.pieces)
+    def extract_text(self, node):
+        """Return the string representation of the node or list of nodes by parsing the
+        subnodes, but returning the result as a string instead of adding it to `self.pieces`.
+        Note that this allows extracting text even if the node is in the ignore list.
+        """
+        if not isinstance(node, (list, tuple)):
+            node = [node]
+        pieces, self.pieces = self.pieces, ['']
+        for n in node:
+            for sn in n.childNodes:
+                self.parse(sn)
+        ret = ''.join(self.pieces)
         self.pieces = pieces
-        return type_str
+        return ret
 
     def get_function_signature(self, node):
         """Returns the function signature string for memberdef nodes."""
-        name = self.get_Text(self.get_specific_subnodes(node, 'name')[0])
-        argsstring = self.get_specific_subnodes(node, 'argsstring')
-        try:
-            argsstring = self.get_Text(argsstring[0])
-        except:
-            argsstring = ''
-        type = self.get_type(node)
+        name = self.extract_text(self.get_specific_subnodes(node, 'name'))
+        if self.with_type_info:
+            argsstring = self.extract_text(self.get_specific_subnodes(node, 'argsstring'))
+        else:
+            argsstring = []
+            param_id = 1
+            for n_param in self.get_specific_subnodes(node, 'param'):
+                declname = self.extract_text(self.get_specific_subnodes(n_param, 'declname'))
+                if not declname:
+                    declname = 'arg' + str(param_id)
+                defval = self.extract_text(self.get_specific_subnodes(n_param, 'defval'))
+                if defval:
+                    defval = '=' + defval
+                argsstring.append(declname + defval)
+                param_id = param_id + 1
+            argsstring = '(' + ', '.join(argsstring) + ')'
+        type = self.extract_text(self.get_specific_subnodes(node, 'type'))
         function_definition = '`' + name + argsstring + '`'
         if type != '' and type != 'void':
             function_definition = function_definition + ' -> ' + '`' + type + '`'
@@ -349,12 +352,8 @@ class Doxy2SWIG:
         self.add_text(['\n', 'Constructors',
                        '\n', '------------'])
         for n in constructor_nodes:
-            defn_str = classname
-            argsstring = self.get_specific_subnodes(n, 'argsstring')
-            if argsstring:
-                defn_str = '`' + defn_str + self.get_Text(argsstring[0]) + '`'
             self.add_text('\n')
-            self.add_line_with_subsequent_indent('* ' + defn_str)
+            self.add_line_with_subsequent_indent('* ' + self.get_function_signature(n))
             self.subnode_parse(n, pieces = [], indent=4, ignore=['definition', 'name'])
 
     def make_attribute_list(self, node):
@@ -370,9 +369,9 @@ class Doxy2SWIG:
         self.add_text(['\n', 'Attributes',
                        '\n', '----------'])
         for n in atr_nodes:
-            name = self.get_Text(self.get_specific_subnodes(n, 'name')[0])
+            name = self.extract_text(self.get_specific_subnodes(n, 'name'))
             self.add_text(['\n* ', '`', name, '`', ' : '])
-            self.add_text(['`', self.get_type(n), '`'])
+            self.add_text(['`', self.extract_text(self.get_specific_subnodes(n, 'type')), '`'])
             self.add_text('  \n')
             restrict = ['briefdescription', 'detaileddescription']
             self.subnode_parse(n, pieces=[''], indent=4, restrict=restrict)
@@ -390,11 +389,11 @@ class Doxy2SWIG:
             if not ns_node and kind == 'namespace':
                 ns_node = node.getElementsByTagName('compoundname')
             if ns_node:
-                sig_prefix = self.get_Text(ns_node[0]) + '::'
+                sig_prefix = self.extract_text(ns_node[0]) + '::'
         elif kind in ('class', 'struct'):
             # Get the full function name.
             cn_node = node.getElementsByTagName('compoundname')
-            sig_prefix = self.get_Text(cn_node[0]) + '::'
+            sig_prefix = self.extract_text(cn_node[0]) + '::'
 
         md_nodes = self.get_specific_subnodes(node, 'memberdef', recursive=2)
         for n in md_nodes:
@@ -404,7 +403,7 @@ class Doxy2SWIG:
                 continue
             if not self.get_specific_subnodes(n, 'definition'):
                 continue
-            name = self.get_Text(self.get_specific_subnodes(n, 'name')[0])
+            name = self.extract_text(self.get_specific_subnodes(n, 'name'))
             if name[:8] == 'operator':
                 continue
             sig = sig_prefix + name
@@ -579,10 +578,7 @@ class Doxy2SWIG:
     def do_parametername(self, node):
         if self.pieces != [] and self.pieces != ['* ', '']:
             self.add_text(', ')
-        try:
-            data = self.get_Text(node)
-        except AttributeError:  # perhaps a <ref> tag in it
-            data = self.get_Text(node.firstChild)
+        data = self.extract_text(node)
         self.add_text(['`', data, '`'])
 
     def do_parameterdescription(self, node):
@@ -619,9 +615,8 @@ class Doxy2SWIG:
             prot = node.attributes['prot'].value
             if prot != 'public':
                 return
-            defn_n = self.get_specific_subnodes(node, 'compoundname')
             self.add_text('\n\n')
-            classdefn = self.get_Text(defn_n[0])
+            classdefn = self.extract_text(self.get_specific_subnodes(node, 'compoundname'))
             classname = classdefn.split('::')[-1]
             self.add_text('%%feature("docstring") %s "\n' % classdefn)
 
@@ -629,15 +624,10 @@ class Doxy2SWIG:
                 constructor_nodes = []
                 for n in self.get_specific_subnodes(node, 'memberdef', recursive=2):
                     if n.attributes['prot'].value == 'public':
-                        defn = self.get_specific_subnodes(n, 'definition')
-                        if defn and self.get_Text(defn[0]) == classdefn + '::' + classname:
+                        if self.extract_text(self.get_specific_subnodes(n, 'definition')) == classdefn + '::' + classname:
                             constructor_nodes.append(n)
                 for n in constructor_nodes:
-                    defn_str = classname
-                    argsstring = self.get_specific_subnodes(n, 'argsstring')
-                    if argsstring:
-                        defn_str = defn_str + self.get_Text(argsstring[0])
-                    self.add_line_with_subsequent_indent(['`', defn_str,'`'])
+                    self.add_line_with_subsequent_indent(self.get_function_signature(n))
 
             names = ('briefdescription','detaileddescription')
             sub_dict = self.get_specific_nodes(node, names)
@@ -685,13 +675,13 @@ class Doxy2SWIG:
         if prot != 'public':
             return
         first = self.get_specific_nodes(node, ('definition', 'name'))
-        name = self.get_Text(first['name'])
+        name = self.extract_text(first['name'])
         if name[:8] == 'operator':  # Don't handle operators yet.
             return
         if not 'definition' in first or kind in ['variable', 'typedef']:
             return
 
-        data = self.get_Text(first['definition'])
+        data = self.extract_text(first['definition'])
         self.add_text('\n')
         self.add_text(['/* where did this entry come from??? */', '\n'])
         self.add_text('%feature("docstring") %s "\n%s' % (data, data))
@@ -711,7 +701,7 @@ class Doxy2SWIG:
         """For a user defined section def a header field is present
         which should not be printed as such, so we comment it in the
         output."""
-        data = self.get_Text(node)
+        data = self.extract_text(node)
         self.add_text('\n/*\n %s \n*/\n' % data)
         # If our immediate sibling is a 'description' node then we
         # should comment that out also and remove it from the parent
@@ -744,6 +734,7 @@ class Doxy2SWIG:
                 print("parsing file: %s" % fname)
             p = Doxy2SWIG(fname,
                           with_function_signature = self.with_function_signature,
+                          with_type_info = self.with_type_info,
                           with_constructor_list = self.with_constructor_list,
                           with_attribute_list = self.with_attribute_list,
                           with_overloaded_functions = self.with_overloaded_functions,
@@ -761,6 +752,11 @@ def main():
                       default=False,
                       dest='f',
                       help='include function signature in the documentation. This is handy when not using swig auto-generated function definitions %feature("autodoc", [0,1])')
+    parser.add_option("-t", '--type-info',
+                      action='store_true',
+                      default=False,
+                      dest='t',
+                      help='include type information for arguments in function signatures. This is similar to swig autodoc level 1')
     parser.add_option("-c", '--constructor-list',
                       action='store_true',
                       default=False,
@@ -793,6 +789,7 @@ def main():
     
     p = Doxy2SWIG(args[0],
                   with_function_signature = options.f,
+                  with_type_info = options.t,
                   with_constructor_list = options.c,
                   with_attribute_list = options.a,
                   with_overloaded_functions = options.o,

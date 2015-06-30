@@ -21,6 +21,8 @@ Options:
                         include function signature in the documentation. This
                         is handy when not using swig auto-generated function
                         definitions %feature("autodoc", [0,1])
+  -t, --type-info       include type information for arguments in function
+                        signatures. This is similar to swig autodoc level 1
   -c, --constructor-list
                         generate a constructor list for class documentation.
                         Useful for target languages where the object
