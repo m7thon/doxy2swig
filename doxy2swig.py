@@ -452,7 +452,7 @@ class Doxy2SWIG:
         self.add_text('  ')
     
     def do_emphasis(self, node):
-        self.surround_parse(node, '_', '_')
+        self.surround_parse(node, '*', '*')
 
     def do_bold(self, node):
         self.surround_parse(node, '**', '**')
