@@ -31,7 +31,7 @@ output will be written (the file will be clobbered).
 #         collecting the respective docs (e.g. for python)
 #     -a: add "Attributes" section collecting the documentation for member
 #         variables (e.g. for python)
-#     NOTE: Currenty swig ignores class docstrings when using -builtin (BUG!)
+#     NOTE: Currently swig ignores class docstrings when using -builtin (BUG!)
 #   - overloaded functions:
 #     -o: collect all documentation into one "Overloaded function" section
 #   - option to include function definition / signature renamed to -f
@@ -208,7 +208,7 @@ class Doxy2SWIG:
         """Parse the subnodes of a given node. Subnodes with tags in the
         `ignore` list are ignored. If pieces is given, use this as target for
         the parse results instead of self.pieces. Indent all lines by the amount
-        given in `indent`. Note that the inital content in `pieces` is not 
+        given in `indent`. Note that the initial content in `pieces` is not
         indented. The final result is in any case added to self.pieces."""
         if pieces is not None:
             old_pieces, self.pieces = self.pieces, pieces
