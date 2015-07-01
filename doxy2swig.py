@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 """doxy2swig.py [options] input.xml output.i
 
-Doxygen XML to SWIG docstring converter.
+Doxygen XML to SWIG docstring converter (improved version).
 
 Converts Doxygen generated XML files into a file containing docstrings
-that can be used by SWIG-1.3.x.  Note that you need to get SWIG
-version > 1.3.23 or use Robin Dunn's docstring patch to be able to use
-the resulting output.
+for use by SWIG.
 
 input.xml is your doxygen generated XML file and output.i is where the
 output will be written (the file will be clobbered).
@@ -37,6 +35,7 @@ output will be written (the file will be clobbered).
 #   - option to include function definition / signature renamed to -f
 #   - formatting:
 #     + included function signatures slightly reformatted
+#     + option (-t) to turn off/on type information for funciton signatures
 #     + lists (incl. nested and ordered)
 #     + attempt to produce docstrings that render nicely as markdown
 #     + translate header, code, emphasis, bold, linebreak tags to markdown
@@ -288,14 +287,12 @@ class Doxy2SWIG:
         else: #default
             self.pieces.append('\n')
 
-    def add_line_with_subsequent_indent(self, value, indent=4):
+    def add_line_with_subsequent_indent(self, line, indent=4):
         """Add line of text and wrap such that subsequent lines are indented
         by `indent` spaces.
         """
-        if isinstance(value, (list, tuple)):
-            line = ''.join(value)
-        else:
-            line = value
+        if isinstance(line, (list, tuple)):
+            line = ''.join(line)
         line = line.strip()
         width = self.textwidth-self.indent-indent
         wrapped_lines = textwrap.wrap(line[indent:], width=width)
@@ -338,10 +335,10 @@ class Doxy2SWIG:
                 param_id = param_id + 1
             argsstring = '(' + ', '.join(argsstring) + ')'
         type = self.extract_text(self.get_specific_subnodes(node, 'type'))
-        function_definition = '`' + name + argsstring + '`'
+        function_definition = name + argsstring
         if type != '' and type != 'void':
-            function_definition = function_definition + ' -> ' + '`' + type + '`'
-        return function_definition
+            function_definition = function_definition + ' -> ' + type
+        return '`' + function_definition + '`'
 
 # MARK: Special parsing tasks (need to be called manually)
     def make_constructor_list(self, constructor_nodes, classname):
@@ -521,18 +518,22 @@ class Doxy2SWIG:
 
 # MARK: List tag handlers
     def do_itemizedlist(self, node):
-        if self.pieces != []:
+        if self.listitem == '':
+            self.start_new_paragraph()
+        elif self.pieces != [] and self.pieces[-1:] != ['']:
             self.add_text('\n')
         listitem = self.listitem
-        if self.listitem == '':
-            self.listitem = '*'
-        else:
+        if self.listitem in ['*', '-']:
             self.listitem = '-'
+        else:
+            self.listitem = '*'
         self.subnode_parse(node)
         self.listitem = listitem
 
     def do_orderedlist(self, node):
-        if self.pieces != []:
+        if self.listitem == '':
+            self.start_new_paragraph()
+        elif self.pieces != [] and self.pieces[-1:] != ['']:
             self.add_text('\n')
         listitem = self.listitem
         self.listitem = 0
@@ -545,7 +546,7 @@ class Doxy2SWIG:
             item = str(self.listitem) + '. '
         except:
             item = str(self.listitem) + ' '
-        self.subnode_parse(node, item, indent=len(item))
+        self.subnode_parse(node, item, indent=4)
 
 # MARK: Parameter list tag handlers
     def do_parameterlist(self, node):
