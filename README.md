@@ -1,11 +1,9 @@
-# doxy2swig
+# doxy2swig (improved)
 
-Doxygen XML to SWIG docstring converter.
+Doxygen XML to SWIG docstring converter (improved version).
 
 Converts Doxygen generated XML files into a file containing docstrings
-that can be used by SWIG-1.3.x.  Note that you need to get SWIG
-version > 1.3.23 or use Robin Dunn's docstring patch to be able to use
-the resulting output.
+for use by SWIG.
 
 # Usage:
 ```
