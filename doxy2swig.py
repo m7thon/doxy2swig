@@ -38,7 +38,8 @@ output will be written (the file will be clobbered).
 #     + option (-t) to turn off/on type information for funciton signatures
 #     + lists (incl. nested and ordered)
 #     + attempt to produce docstrings that render nicely as markdown
-#     + translate header, code, emphasis, bold, linebreak tags to markdown
+#     + translate code, emphasis, bold, linebreak, hruler, blockquote,
+#       verbatim, heading tags to markdown
 #     + new text-wrapping and option -w to specify the text width
 #
 
@@ -64,23 +65,25 @@ def my_open_write(dest):
         return open(dest, 'w')
 
 # MARK: Text handling:
-def shift(txt, indent, prepend = ''):
+def shift(txt, indent = '    ', prepend = ''):
     """Return a list corresponding to the lines of text in the `txt` list
-    indented by `indent` spaces. Prepend the string given in `prepend` to the
-    beginning of the first line. Note that if len(prepend) > indent, then
+    indented by `indent`. Prepend instead the string given in `prepend` to the
+    beginning of the first line. Note that if len(prepend) > len(indent), then
     `prepend` will be truncated (doing better is tricky!). This preserves a 
     special '' entry at the end of `txt` (see `do_para` for the meaning).
     """
+    if type(indent) is int:
+        indent = indent * ' '
     special_end = txt[-1:] == ['']
     lines = ''.join(txt).splitlines(True)
     for i in range(1,len(lines)):
-        if lines[i].strip():
-            lines[i] = indent * ' ' + lines[i]
+        if lines[i].strip() or indent.strip():
+            lines[i] = indent + lines[i]
     if not lines:
         return prepend
-    prepend = prepend[:indent]
-    prepend = prepend + (indent - len(prepend)) * ' '
-    lines[0] = prepend + lines[0]
+    prepend = prepend[:len(indent)]
+    indent = indent[len(prepend):]
+    lines[0] = prepend + indent + lines[0]
     ret = [''.join(lines)]
     if special_end:
         ret.append('')
@@ -215,23 +218,25 @@ class Doxy2SWIG:
             old_pieces, self.pieces = self.pieces, pieces
         else:
             old_pieces = []
-        if indent > 0:
+        if type(indent) is int:
+            indent = indent * ' '
+        if len(indent) > 0:
             pieces = ''.join(self.pieces)
-            i_piece = pieces[:indent]
+            i_piece = pieces[:len(indent)]
             if self.pieces[-1:] == ['']:
-                self.pieces = [pieces[indent:]] + ['']
+                self.pieces = [pieces[len(indent):]] + ['']
             elif self.pieces != []:
-                self.pieces = [pieces[indent:]]
-        self.indent += indent
+                self.pieces = [pieces[len(indent):]]
+        self.indent += len(indent)
         for n in node.childNodes:
             if restrict is not None:
                 if n.nodeType == n.ELEMENT_NODE and n.tagName in restrict:
                     self.parse(n)
             elif n.nodeType != n.ELEMENT_NODE or n.tagName not in ignore:
                 self.parse(n)
-        if indent > 0:
+        if len(indent) > 0:
             self.pieces = shift(self.pieces, indent, i_piece)
-        self.indent -= indent
+        self.indent -= len(indent)
         old_pieces.extend(self.pieces)
         self.pieces = old_pieces
 
@@ -472,6 +477,18 @@ class Doxy2SWIG:
         pieces.extend([''.join(self.pieces) + '  \n', ''])
         self.pieces = pieces
     
+    def do_verbatim(self, node):
+        self.start_new_paragraph()
+        self.subnode_parse(node, pieces=[''], indent=4)
+    
+    def do_blockquote(self, node):
+        self.start_new_paragraph()
+        self.subnode_parse(node, pieces=[''], indent='> ')
+    
+    def do_hruler(self, node):
+        self.start_new_paragraph()
+        self.add_text('* * * * *  \n')
+    
     def do_includes(self, node):
         self.add_text('\nC++ includes: ')
         self.subnode_parse(node)
@@ -510,7 +527,8 @@ class Doxy2SWIG:
             for wl in w_line:
                 wrapped_para.append(wl + '\n')
         if wrapped_para:
-            wrapped_para[-1] = wrapped_para[-1][:-1] + '  \n'
+            if wrapped_para[-1][-3:] != '  \n':
+                wrapped_para[-1] = wrapped_para[-1][:-1] + '  \n'
             if dont_end_paragraph:
                 wrapped_para.append('')
         pieces.extend(wrapped_para)
