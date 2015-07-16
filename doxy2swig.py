@@ -343,7 +343,7 @@ class Doxy2SWIG:
         function_definition = name + argsstring
         if type != '' and type != 'void':
             function_definition = function_definition + ' -> ' + type
-        return '`' + function_definition + '`'
+        return '`' + function_definition + '`  '
 
 # MARK: Special parsing tasks (need to be called manually)
     def make_constructor_list(self, constructor_nodes, classname):
