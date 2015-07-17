@@ -175,6 +175,12 @@ class Doxy2SWIG:
 
     def parse_Text(self, node):
         txt = node.data
+        if txt == ' ':
+            # this can happen when two tags follow in a text, e.g.,
+            # " ...</emph> <formaula>$..." etc.
+            # here we want to keep the space.
+            self.add_text(txt)
+            return
         txt = txt.replace('\\', r'\\')
         txt = txt.replace('"', r'\"')
         # ignore pure whitespace
@@ -452,6 +458,12 @@ class Doxy2SWIG:
     def do_linebreak(self, node):
         self.add_text('  ')
     
+    def do_ndash(self, node):
+        self.add_text('--')
+
+    def do_mdash(self, node):
+        self.add_text('---')
+
     def do_emphasis(self, node):
         self.surround_parse(node, '*', '*')
 
