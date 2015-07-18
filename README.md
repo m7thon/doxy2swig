@@ -40,3 +40,10 @@ Options:
                         markdown).
   -q, --quiet           be quiet and minimize output
 ```
+
+# Note:
+
+To attach docstrings to classes with SWIG for python and using the `-builtin` option,
+a version of SWIG >= 3.0.7 (currently this means the development version) is required.
+Without this, the class documentation including constructor lists (`-c`) and attribute
+lists (`-a`) will not be available from python.

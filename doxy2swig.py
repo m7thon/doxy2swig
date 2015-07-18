@@ -29,7 +29,6 @@ output will be written (the file will be clobbered).
 #         collecting the respective docs (e.g. for python)
 #     -a: add "Attributes" section collecting the documentation for member
 #         variables (e.g. for python)
-#     NOTE: Currently swig ignores class docstrings when using -builtin (BUG!)
 #   - overloaded functions:
 #     -o: collect all documentation into one "Overloaded function" section
 #   - option to include function definition / signature renamed to -f
