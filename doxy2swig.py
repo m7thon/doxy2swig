@@ -54,14 +54,19 @@ def my_open_read(source):
     if hasattr(source, "read"):
         return source
     else:
-        return open(source)
-
+        try:
+            return open(source, encoding='utf-8')
+        except TypeError:
+            return open(source)
 
 def my_open_write(dest):
     if hasattr(dest, "write"):
         return dest
     else:
-        return open(dest, 'w')
+        try:
+            return open(dest, 'w', encoding='utf-8')
+        except TypeError:
+            return open(dest, 'w')
 
 # MARK: Text handling:
 def shift(txt, indent = '    ', prepend = ''):
