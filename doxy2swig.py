@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-"""doxy2swig.py [options] input.xml output.i
+"""doxy2swig.py [options] index.xml output.i
 
 Doxygen XML to SWIG docstring converter (improved version).
 
 Converts Doxygen generated XML files into a file containing docstrings
 for use by SWIG.
 
-input.xml is your doxygen generated XML file and output.i is where the
+index.xml is your doxygen generated XML file and output.i is where the
 output will be written (the file will be clobbered).
 """
 #
