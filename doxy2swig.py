@@ -10,6 +10,9 @@ index.xml is your doxygen generated XML file and output.i is where the
 output will be written (the file will be clobbered).
 """
 #
+# The current version of this code is hosted on a github repository:
+#   https://github.com/m7thon/doxy2swig
+#
 # This code is implemented using Mark Pilgrim's code as a guideline:
 #   http://www.faqs.org/docs/diveintopython/kgp_divein.html
 #
