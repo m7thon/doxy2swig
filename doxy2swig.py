@@ -192,9 +192,7 @@ class Doxy2SWIG:
         txt = txt.replace('"', r'\"')
         # ignore pure whitespace
         m = self.space_re.match(txt)
-        if m and len(m.group()) == len(txt):
-            pass
-        else:
+        if not (m and len(m.group()) == len(txt)):
             self.add_text(txt)
 
     def parse_Comment(self, node):
