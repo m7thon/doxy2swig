@@ -780,7 +780,15 @@ class Doxy2SWIG:
             self.pieces.extend(p.pieces)
 
 # MARK: main
-def main():
+def main(input, output, **kwargs):
+    """main function.  kwargs are passed to Doxy2SWIG"""
+    p = Doxy2SWIG(input, **kwargs)
+    p.generate()
+    p.write(output)
+
+# MARK: Script driver
+def driver():
+    """Parse command arguments and call main"""
     usage = __doc__
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -828,16 +836,15 @@ def main():
     
     args = parser.parse_args()
     
-    p = Doxy2SWIG(args.input,
-                  with_function_signature = args.f,
-                  with_type_info = args.t,
-                  with_constructor_list = args.c,
-                  with_attribute_list = args.a,
-                  with_overloaded_functions = args.o,
-                  textwidth = args.w,
-                  quiet = args.q)
-    p.generate()
-    p.write(args.output)
+    main(args.input,
+         args.output,
+         with_function_signature = args.f,
+         with_type_info = args.t,
+         with_constructor_list = args.c,
+         with_attribute_list = args.a,
+         with_overloaded_functions = args.o,
+         textwidth = args.w,
+         quiet = args.q)
 
 if __name__ == '__main__':
-    main()
+    driver()
