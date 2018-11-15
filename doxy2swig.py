@@ -50,7 +50,7 @@ import re
 import textwrap
 import sys
 import os.path
-import optparse
+import argparse
 
 
 def my_open_read(source):
@@ -782,57 +782,62 @@ class Doxy2SWIG:
 # MARK: main
 def main():
     usage = __doc__
-    parser = optparse.OptionParser(usage)
-    parser.add_option("-f", '--function-signature',
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('input',
+                        metavar='index.xml',
+                        help='doxygen generated XML file')
+    parser.add_argument('output',
+                        metavar='output.i',
+                        help='where output will be written (the file will be clobbered')
+    parser.add_argument("-f", '--function-signature',
                       action='store_true',
                       default=False,
                       dest='f',
-                      help='include function signature in the documentation. This is handy when not using swig auto-generated function definitions %feature("autodoc", [0,1])')
-    parser.add_option("-t", '--type-info',
+                      help='include function signature in the documentation. This is handy when not using swig auto-generated function definitions %%feature("autodoc", [0,1])')
+    parser.add_argument("-t", '--type-info',
                       action='store_true',
                       default=False,
                       dest='t',
                       help='include type information for arguments in function signatures. This is similar to swig autodoc level 1')
-    parser.add_option("-c", '--constructor-list',
+    parser.add_argument("-c", '--constructor-list',
                       action='store_true',
                       default=False,
                       dest='c',
                       help='generate a constructor list for class documentation. Useful for target languages where the object construction should be documented in the class documentation.')
-    parser.add_option("-a", '--attribute-list',
+    parser.add_argument("-a", '--attribute-list',
                       action='store_true',
                       default=False,
                       dest='a',
                       help='generate an attributes list for class documentation. Useful for target languages where class attributes should be documented in the class documentation.')
-    parser.add_option("-o", '--overloaded-functions',
+    parser.add_argument("-o", '--overloaded-functions',
                       action='store_true',
                       default=False,
                       dest='o',
                       help='collect all documentation for overloaded functions. Useful for target languages that have no concept of overloaded functions, but also to avoid having to attach the correct docstring to each function overload manually')
-    parser.add_option("-w", '--width', type="int",
+    parser.add_argument("-w", '--width', type=int,
                       action='store',
                       dest='w',
                       default=80,
                       help='textwidth for wrapping (default: 80). Note that the generated lines may include 2 additional spaces (for markdown).')
-    parser.add_option("-q", '--quiet',
+    parser.add_argument("-q", '--quiet',
                       action='store_true',
                       default=False,
                       dest='q',
                       help='be quiet and minimize output')
     
-    options, args = parser.parse_args()
-    if len(args) != 2:
-        parser.error("no input and output specified")
+    args = parser.parse_args()
     
-    p = Doxy2SWIG(args[0],
-                  with_function_signature = options.f,
-                  with_type_info = options.t,
-                  with_constructor_list = options.c,
-                  with_attribute_list = options.a,
-                  with_overloaded_functions = options.o,
-                  textwidth = options.w,
-                  quiet = options.q)
+    p = Doxy2SWIG(args.input,
+                  with_function_signature = args.f,
+                  with_type_info = args.t,
+                  with_constructor_list = args.c,
+                  with_attribute_list = args.a,
+                  with_overloaded_functions = args.o,
+                  textwidth = args.w,
+                  quiet = args.q)
     p.generate()
-    p.write(args[1])
+    p.write(args.output)
 
 if __name__ == '__main__':
     main()
