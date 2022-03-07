@@ -7,6 +7,12 @@ Converts Doxygen generated XML files into a file containing docstrings
 for use by SWIG.
 
 
+DEPRECATION NOTE
+----------------
+
+As of swig 4.0.0, direct support for parsing and conversion of doxygen documentation is available, and according to the swig documentation can be enabled via `swig -python -doxygen` (perhaps in conjunction with `%feature("autodoc", "1")`). It is still possible to generate and include docstrings via `doxy2swig` as described below, but this should no longer be required and is considered deprecated.
+
+
 Usage
 -----
 
